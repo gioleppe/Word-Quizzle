@@ -19,29 +19,28 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * WQServer is the core class of the Word Quizzle application. The registration
- * of new users is handled by providing a remote method {@code registerUser}.
- * Newly registered user are then inserted in the server's database which is an
- * instance of the class {@link WQDatabase} thus providing persistence of the
- * users datas.
+ * Core class of the Word Quizzle application. Provides user registration via
+ * the remote method {@code registerUser}.
+ * The server has a database, which is an instance of the class
+ * {@link WQDatabase} providing persistent data across server restarts.
  * 
  * <p>
- * The WQServer class is also provided with a threadpool {@code tPool} and a
- * selector {@code serverSelector} in order to spawn a limited number of threads
- * thus avoiding excessive load on the cpu and minimizing the overhead due to
- * numerous context changes occurring by assigning one thread per connection.
- * The threadpool is then fed tasks by the selector, whose job is solely to
- * accept new connections and to read the clients requests.
+ * The class is provided with a threadpool {@code tPool} and a
+ * selector {@code serverSelector} in order to spawn a limited number of threads.
+ * This avoids unnecessary load on the cpu and minimizes the overhead that would be
+ * present if we adopted a multi threaded solution.
+ * The threadpool is fed tasks generated inside the selector loop, whose job is 
+ * accepting new connections and to reading client requests.
  * 
  * <p>
- * To keep track of the users who are logged in WQServer has a field
+ * To keep track of the users who are logged in WQServer, there's a field
  * {@code onlineUsers} of type {@link ConcurrentHashMap} where the keys are the
  * port numbers on which the users clients are connected and the values are
  * their nicknames.
  * 
  * <p>
- * WQServer provides an highly scalable architecture by combining an iterative
- * task dispatching with a concurrent task execution.
+ * WQServer combines iterative task dispatching with 
+ * a concurrent task execution to increase scalability.
  * 
  */
 public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
@@ -49,89 +48,88 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
     /* ---------------- Fields -------------- */
 
     /**
-     * The serial version UID.
+     * Serial Version UID representing the class version.
+     * Used to ensure correct serialization.
      */
     private static final long serialVersionUID = 1;
 
     /**
-     * The WQDatabase. Initialized upon server creation. It first tries to
-     * deserialize, if exists, the db.json file and if it doesn't it creates it.
+     * The database used to store user data across restarts. 
      */
     private final WQDatabase database;
 
     /**
-     * The threadpool. Initialized upon server creation. The number of threads is
+     * The threadpool used for task execution. The number of threads is
      * currently hardcoded to four as most cpus nowadays have two cores with four
      * threads.
      */
     private final ThreadPoolExecutor tPool;
 
     /**
-     * The selector. Initialized upon server creation.
+     * The selector used for clients' sockets multiplexing.
      */
     private Selector serverSelector;
 
     /**
-     * The channel for the server's socket on which it accepts new connection
-     * requests. Initialized upon server creation.
+     * The ServerSocketChannel accepting new connection
+     * requests.
      */
     private ServerSocketChannel serverChannel;
 
     /**
-     * The port on which the server listens. Can be specified by command line.
+     * The port on which the ServerSocketChannel is opened,
+     * its value is passed to the WQServer via the constructor method.
      */
     private final int portNumber;
 
     /**
-     * The data structure used by WQServer to keep trace of online users. For every
-     * logged user u the key is the server port number on which the connection with
-     * the client of u is taking place and the value is u's nickname. It's also used
-     * to check if the requested operation is legal during task execution.
+     * ConcurrentHashMap used by WQServer to track online users. Associates users' nicknames
+     * to the server port number on which the connection with each user
+     * is taking place. 
+     * Also used to check if the requested operation is permitted during task execution.
      */
     private final ConcurrentHashMap<Integer, String> onlineUsers;
 
     /**
-     * The data structure used by WQServer to keep trace of online users IP
-     * addresses that will be used for UDP communication. For every logged user u
-     * the key is the u's nickname and the value is u's IP address. It's used to
-     * send match invitations.
+     * ConcurrentHashMap used by WQServer to track online users' IP
+     * addresses that will be used for UDP communication purposes. 
+     * Associates an username to an IP address.
+     * Used to send match invitations.
      */
     private final ConcurrentHashMap<String, InetSocketAddress> onlineIPs;
 
     /**
-     * The match duration in minutes. It's an int stating how many minutes a match
-     * shall last. It's specified by command line.
+     * Match duration in minutes. It's an int stating how many minutes a match
+     * shall last. Passed to the constructor method.
      */
     private final int matchDuration;
 
     /**
-     * The match invitation time to live. It's an int stating how many seconds a
-     * match invitation shall remain valid. It's specified by command line.
+     * Match invitation timeout. specifies how many seconds a
+     * match invitation shall remain valid. Passed to the constructor method.
      */
     private final int acceptDuration;
 
     /**
-     * The number of words to be displayed during a match. Is an int stating how
-     * many english words the server shall provide to the players. It's specified by
-     * command line.
+     * Specifies how many words the server shall provide to the players for translation.
+     *  Passed to the constructor method.
      */
     private final int numWords;
 
     /* ---------------- Public operations -------------- */
 
     /**
-     * Creates a new WQServer and initializes the threadpool, the selector and the
-     * server's socket channel.
+     * Creates a new WQServer.
+     * Initializes the threadpool, the selector and the server's socket channel.
      * 
-     * @param port       the server port number.
-     * @param length     the match duration in minutes.
-     * @param invitation the espiry time of a match invitation in seconds.
-     * @param words      the number of words to be provided for tradution during a
-     *                   match.
-     * @throws RemoteException could be be thrown, WQServer is a remote object.
+     * @param port       ServerSocketChannel port number.
+     * @param length     Match duration in minutes.
+     * @param invitation Match invitation timeout in seconds.
+     * @param words      Number of words in a match.
+     * 
+     * @throws RemoteException could be be thrown since WQServer is a remote object.
      */
-    public WQServer(final int port, final int length, final int invitation, final int words) throws RemoteException {
-        super();
+    public WQServer(final int port, final int matchMinutes, final int invitationTO, final int words) throws RemoteException {
         this.database = new WQDatabase();
         this.tPool = new ThreadPoolExecutor(4, 4, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         try {
@@ -143,19 +141,19 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
         this.portNumber = port;
         this.onlineUsers = new ConcurrentHashMap<Integer, String>();
         this.onlineIPs = new ConcurrentHashMap<String, InetSocketAddress>();
-        this.matchDuration = length;
-        this.acceptDuration = invitation;
+        this.matchDuration = matchMinutes;
+        this.acceptDuration = invitationTO;
         this.numWords = words;
     }
 
     /**
-     * User registration by remote method invocation. Checks the user's nickname and
-     * password, if the password is empty or the nickname is already taken returns
-     * an error message else proceeds to insert the user in the database and the
-     * calls {@code serialize} on the server's WQDatabase instance.
+     * User registration provided via RMI. Checks user's nickname and
+     * password, returns an error message if the password is empty or
+     * the nickname is already taken, else it proceeds to insert the 
+     * user in the database and calls {@code serialize} on the server's WQDatabase instance.
      * 
-     * @param username the user's username.
-     * @param password the user's password.
+     * @param username remotely chosen username.
+     * @param password remotely chosen password.
      */
     @Override
     public String registerUser(final String username, final String password) {
@@ -177,23 +175,22 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
     }
 
     /**
-     * Main method. This is where the logic takes place.
+     * Entry point for the WQServer.
      * 
      * @param args main args
-     * @throws RemoteException a remote exception may occur during the execution of
-     *                         {@code rebind}.
+     * @throws RemoteException in case {@code rebind} fails.
      */
     public static void main(final String[] args) throws RemoteException {
 
-        // Server creation.
+        // Server creation with fixed parameters.
         final WQServer server = new WQServer(8888, 1, 15, 5);
 
-        // Remote method registration
+        // Remote method registration on fixed port 5678
         LocateRegistry.createRegistry(5678);
         final Registry r = LocateRegistry.getRegistry(5678);
         r.rebind("REGISTRATION", server);
 
-        // Setting up the Selector for accepting new connections.
+        // Setting up the Selector.
         try {
             final ServerSocket serverSocket = server.serverChannel.socket();
             final InetSocketAddress address = new InetSocketAddress(server.portNumber);
@@ -201,20 +198,19 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
             server.serverChannel.configureBlocking(false);
             final SelectionKey serverKey = server.serverChannel.register(server.serverSelector, SelectionKey.OP_ACCEPT);
             System.out.println("Listening for connections on port " + server.portNumber + " of host "
-                    + InetAddress.getLocalHost().getHostName() + ".");
+                    + InetAddress.getLocalHost().getHostName());
         } catch (final IOException IOE) {
             IOE.printStackTrace();
         }
 
-        // Server loop
+        // server loop
         while (true) {
 
             try {
-                // The number of keys upon which an accept connection operation or a read
-                // operation can be performed
+                // The number of keys, possibly zero, whose ready-operation sets were updated
                 final int readyKeys = server.serverSelector.select();
                 if (readyKeys > 0) {
-                    // The set containing those keys, and an iterator over this set
+                    // gets the set containing the ready keys, and an iterator for the set
                     final Set<SelectionKey> keys = server.serverSelector.selectedKeys();
                     final Iterator<SelectionKey> keysIterator = keys.iterator();
                     // Selector loop: here we check if an accept connection operation or a read
@@ -224,45 +220,48 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
                     // the keys registered for the read opearation are the ones associated with the
                     // clients sockets.
                     while (keysIterator.hasNext()) {
-                        // Extract one key
+                        // extract a key
                         final SelectionKey key = keysIterator.next();
-                        // The key must be manually removed from the iterator, the selector doesn't
-                        // Automatically remove the istances of the SelectionKeys.
+                        // manually remove the key from the selector, since it doesn't
+                        // automatically remove SelectionKeys.
                         keysIterator.remove();
                         try {
 
                             if (key.isAcceptable()) {
-                                // Accepting the connection from the client
+                                // accept connection from the client
                                 final ServerSocketChannel wqServer = (ServerSocketChannel) key.channel();
                                 final SocketChannel wqClient = wqServer.accept();
                                 System.out.println(
                                         "Accepted connection from client: " + server.getClientHostname(wqClient));
                                 wqClient.configureBlocking(false);
-                                // Registering the client socket for read operations
+                                // registers the client socket for read operations
                                 final SelectionKey keyClient = wqClient.register(server.serverSelector,
                                         SelectionKey.OP_READ);
+                                // allocate a buffer and attach it to the key
                                 final ByteBuffer bBuff = ByteBuffer.allocate(512);
                                 keyClient.attach(bBuff);
 
                             } else if (key.isReadable()) {
-                                // Reading the socked associated with the key, the key's interest set must be
-                                // manually zeroed to avoid concurrency problems between threads, it will be
-                                // set again to the read operation by the tasks after their completion.
+                                // reads the socket associated with the key, then zeroes the interest set  
+                                // to avoid concurrency problems between threads. 
+                                // it will be set again to the read operation by the tasks after their completion.
                                 key.interestOps(0);
-                                // This boolean is set to true if the user crashses, in fact, if that happens,
-                                // the key associated with the client's socket will be readable and '-1'
-                                // will be read from it.
+                                // This boolean is set to true if the user crashses in order to correctly remove the
+                                // key from the selector. 
+                                // in case of a crash the key associated with the client's socket
+                                // will be readable and '-1' will be read from it.
                                 boolean crash = false;
                                 final SocketChannel wqClient = (SocketChannel) key.channel();
                                 final ByteBuffer bBuff = (ByteBuffer) key.attachment();
                                 final byte[] msg = new byte[128];
                                 int index = 0;
                                 int k;
-                                // Reading the socket
+                                // reads from the socket channel
                                 while ((k = wqClient.read(bBuff)) != 0 && !crash) {
-                                    // Client unexpectedly closed the connection
+                                    // Client closed the connection => probable crash
                                     if (k == -1) {
-                                        // If the client crashed a brutal logout is performed.
+                                        // If the client crashed a brutal logout is performed
+                                        // logging out the user by force.
                                         crash = true;
                                         server.tPool.execute(new LogoutTask(server.onlineUsers, server.onlineIPs,
                                                 server.serverSelector, key, true));
@@ -270,31 +269,31 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
                                 }
                                 if (crash)
                                     continue;
-                                // Preparing the buffer for reading form it
+                                // prepares to read from the buffer
                                 bBuff.flip();
-                                // Reading from the buffer
+                                // reads the buffer while there's still something to read
                                 while (bBuff.hasRemaining()) {
                                     msg[index] = bBuff.get();
                                     index++;
                                 }
-                                // Building the raw arguments
+                                // builds the raw args byte by byte
                                 String rawArgs = "";
                                 for (final byte b : msg) {
                                     if ((int) b != 0)
                                         rawArgs += (char) b;
                                 }
-                                // Clearing the buffer, resetting its 'position' to 0 and its 'limit' to its
-                                // capacity
+                                // clears the buffer, resetting 'position' to 0 
+                                // and 'limit' to its capacity
                                 bBuff.clear();
-                                // Splitting the raw arguments, obtaining the processed arguments
+                                // splits the raw args, obtaining the processed arguments
                                 final String[] procArgs = rawArgs.split(" ");
-                                // codo_op is an integer indicating which operation the client requested
+                                // cod_op indicates the operation requested by the client
                                 final Integer cod_op = Integer.parseInt(procArgs[0]);
 
                                 switch (cod_op) {
 
                                 case 0:
-                                    // Login Operation.
+                                    // login op.
                                     final String nick = procArgs[1];
                                     final String pwd = procArgs[2];
                                     final int port = Integer.parseInt(procArgs[3]);
@@ -303,38 +302,38 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
                                     server.tPool.execute(logtsk);
                                     break;
                                 case 1:
-                                    // Logout Operation.
+                                    // logout op.
                                     final LogoutTask unlogtsk = new LogoutTask(server.onlineUsers, server.onlineIPs,
                                             server.serverSelector, key, false);
                                     server.tPool.execute(unlogtsk);
                                     break;
                                 case 2:
-                                    // Add Friend Operation.
+                                    // add friend op.
                                     final String friend = procArgs[1];
                                     final AddFriendTask addtsk = new AddFriendTask(server.database, server.onlineUsers,
                                             server.serverSelector, key, friend);
                                     server.tPool.execute(addtsk);
                                     break;
                                 case 3:
-                                    // Get Friends List Operation.
+                                    // get friend list op.
                                     final GetFriendListTask lsttsk = new GetFriendListTask(server.database,
                                             server.onlineUsers, server.serverSelector, key);
                                     server.tPool.execute(lsttsk);
                                     break;
                                 case 4:
-                                    // Get Score Operation.
+                                    // get score op.
                                     final GetScoreTask scoretsk = new GetScoreTask(server.database, server.onlineUsers,
                                             server.serverSelector, key);
                                     server.tPool.execute(scoretsk);
                                     break;
                                 case 5:
-                                    // Get Scoreboard Operation.
+                                    // get scoreboard op.
                                     final GetScoreboardTask boardtsk = new GetScoreboardTask(server.database,
                                             server.onlineUsers, server.serverSelector, key);
                                     server.tPool.execute(boardtsk);
                                     break;
                                 case 6:
-                                    // Match Operation.
+                                    // match op.
                                     final String challenged = procArgs[1];
                                     final MatchTask matchtsk = new MatchTask(server.database, server.onlineUsers,
                                             server.onlineIPs, server.serverSelector, key, challenged,
@@ -362,9 +361,9 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
     }
 
     /**
-     * Utility method to display the client's hostname.
+     * Displays the client's hostname.
      * 
-     * @param client the socket.
+     * @param socketChannel the client's socket.
      * @return the client's hostname.
      */
     private String getClientHostname(final SocketChannel socketChannel) {
