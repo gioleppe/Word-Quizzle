@@ -16,6 +16,8 @@ import java.lang.reflect.Type;
  */
 public class WQDatabase {
 
+     /* ---------------- Fields -------------- */
+
     /**
      * ConcurrentHashMap used to store the UWUsers.
      * String keys: the users' nicknames.

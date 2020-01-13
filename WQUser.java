@@ -1,37 +1,38 @@
 import java.util.ArrayList;
 
 /**
- * The WQUser class models a user and implements the comparable interface.
+ * The WQUser class models the Word Quizzle User. 
+ * Implements the Comparable interface in order to sort users for the scoreboard.
  */
 public class WQUser implements Comparable<WQUser> {
 
-    /* ---------------- Fields -------------- */
+     /* ---------------- Fields -------------- */
 
     /**
-     * The user's nickname.
+     * User's nickname.
      */
     private final String nickname;
 
     /**
-     * The user's score.
+     * User's score.
      */
     private Integer score;
 
     /**
-     * The hash of the user's password.
+     * User's password hash.
      */
     private final int pwdHash;
 
     /**
-     * The user's friends.
+     * User's friends.
      */
     private final ArrayList<String> friends = new ArrayList<String>();
 
     /**
-     * Returns a new WQUser.
+     * WQUser's constructor method.
      * 
-     * @param nickname the nickname.
-     * @param pwdHash  the password.
+     * @param nickname user's nickname.
+     * @param pwdHash  user's password.
      */
     public WQUser(final String nickname, final int pwdHash) {
         this.nickname = nickname;
@@ -40,57 +41,55 @@ public class WQUser implements Comparable<WQUser> {
     }
 
     /**
-     * Getter method used to access the user's nickname.
+     * Getter method. Returns the user's nickname to the caller.
      * 
-     * @return the user's nickname.
+     * @return this user's nickname.
      */
     protected String getNickname() {
         return this.nickname;
     }
 
     /**
-     * Getter method used to access the user's score.
+     * Getter method. Returns the user's score to the caller.
      * 
-     * @return the user's score.
+     * @return this user's score.
      */
     protected Integer getScore() {
         return this.score;
     }
 
     /**
-     * Getter method used to access the user's nickname.
+     * Getter method. Returns the user's password hash.
      * 
-     * @return the user's password hash.
+     * @return this user's password hash.
      */
     protected int getPwdHash() {
         return this.pwdHash;
     }
 
     /**
-     * Getter method used to access the user's nickname.
+     * Getter method. Returns the user's friend list.
      * 
-     * @return the user's friends.
+     * @return the user's friend list.
      */
     protected ArrayList<String> getFriends() {
         return this.friends;
     }
 
     /**
-     * This method sets the user score. It is used upon match termination to update
-     * the score of the players.
+     * Updates the user's score. called by setScore to update
+     * the score of the players after every match.
      * 
-     * @param difference the increment or decrement to add to the score.
+     * @param difference the variation to the user's score.
      */
     protected synchronized void updateScore(final Integer difference) {
         this.score += difference;
     }
 
     /**
-     * Compare method. The scoreboard must be sorted by the user score and the
-     * user's friend score. In order to do that WQUser class implements the
-     * comparable interface.
+     * Compare method. Used to sort the scoreboard.
      * 
-     * @param user
+     * @param user the user to be compared to.
      */
     @Override
     public int compareTo(final WQUser user) {
