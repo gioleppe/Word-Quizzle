@@ -14,31 +14,34 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
- * 
+ * The WQWrd class is used to extract random words from the dictionary
+ *  and to request translations to the MyMemory API. 
  */
 public class WQWords {
 
     /* ---------------- Fields -------------- */
 
     /**
-     * The number of words.
+     * The number of words to extract from the dictionary.
      */
     private int wordNum;
 
     /**
-     * The dictionary, contains the wordNum words.
+     * The dictionary.
+     *  Loaded in order to avoid a lot of system calls opening the file.
      */
     public ArrayList<String> dictionary;
 
     /**
-     * The WQ words construction populates the ArrayList dictionary used to extract
+     * WQWords constructor. Populates the ArrayList dictionary used to extract
      * words.
      * 
-     * @param wordNum the number of words to request.
+     * @param wordNum the number of words to request from the dictionary.
      */
     public WQWords(int wordNum) {
         this.wordNum = wordNum;
         this.dictionary = new ArrayList<String>();
+        // opens the dictionary and puts every line in an ArrayList.
         try (BufferedReader reader = new BufferedReader(new FileReader("ItalianDictionary.txt"));) {
             String word;
             while ((word = reader.readLine()) != null) {
@@ -57,9 +60,11 @@ public class WQWords {
      * 
      * @param word the word to translate.
      * @throws IOException if some problems occur during file opening.
+     * @return returns an ArrayList of translations to the caller.
      */
     private ArrayList<String> getTranslation(String word) throws IOException {
         ArrayList<String> translations = new ArrayList<String>();
+        // building the request URL to connect to.
         String HTTPrequest = "https://api.mymemory.translated.net/get?q=" + word.replace(" ", "%20")
                 + "&langpair=it|en";
         URL mymemoryAPI = new URL(HTTPrequest);
@@ -67,15 +72,18 @@ public class WQWords {
         BufferedReader buff = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
         String inputLine;
         StringBuffer content = new StringBuffer();
+        // reading the response to StringBuffer content
         while ((inputLine = buff.readLine()) != null) {
             content.append(inputLine);
         }
+        // parsing to json and extracting the translations using GSON
         JsonElement jelement = JsonParser.parseString(content.toString());
         JsonObject jobject = jelement.getAsJsonObject();
         JsonArray jarray = jobject.get("matches").getAsJsonArray();
         for (int i = 0; i < jarray.size(); i++) {
             JsonObject translated = (JsonObject) jarray.get(i);
             String translation = translated.get("translation").getAsString();
+            // cleaning junk from the received translations (MyMemory has a lot of weird/nonsense translations)
             translations.add(translation.toLowerCase().replaceAll("[^a-zA-Z0-9\\u0020]", ""));
 
         }
@@ -83,12 +91,12 @@ public class WQWords {
     }
 
     /**
-     * The requestWords method extracts random lines from the dictionary and asks
+     * Extracts random lines from the dictionary and asks
      * for their translation via the getTranslation method.
      * 
      * @throws IOException if something wrong happens during the getTranslation
      *                     call.
-     * 
+     * @return returns an HashMap containing all the extracted words and their corresponding translations.
      */
     protected HashMap<String, ArrayList<String>> requestWords() throws IOException {
         ArrayList<String> selectedWords = new ArrayList<String>();
@@ -97,12 +105,14 @@ public class WQWords {
         int i = 0;
         while (i < this.wordNum) {
             String word = this.dictionary.get(rand.nextInt(this.dictionary.size()));
+            // adds word and increases index only if the word wasn't extracted yet
             if (!selectedWords.contains(word)) {
                 selectedWords.add(word);
                 i++;
             }
         }
         for (String word : selectedWords) {
+            // asks for the translations for the word via the getTranslation method
             ArrayList<String> translations = this.getTranslation(word);
             words.put(word, translations);
         }
@@ -110,10 +120,10 @@ public class WQWords {
     }
 
     /**
-     * Where the class logic happens.
+     * Main used for testing purposes.
      * 
      * @param args main args.
-     * @throws IOException if something strange happens.
+     * @throws IOException if something strange happens requesting the words.
      */
     public static void main(String[] args) throws IOException {
         WQWords words = new WQWords(5);
