@@ -9,46 +9,46 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 
 /**
- * As the class name suggests, this is the {@code WQServer}'s database. The
- * WQDatabase class, in fact, take cares of storing and serializing all fo the
- * WQServer's persistent informations, such as the users nicknames and
- * passwords, the users friend lists and the users scores. All the serialization
- * is handled with the {@code Gson} library.
+ * This class take cares of storing and serializing
+ * WQServer's persistent informations, such as users' nicknames and
+ * passwords, users' friend lists and users' scores. 
+ * All the serialization is handled by the {@code Gson} external library.
  */
 public class WQDatabase {
 
-    /* ---------------- Fields -------------- */
-
     /**
-     * The concurrent hashmap of the class, it's the core of the database. The keys
-     * are the users nicknames and the values are the corresponding WQUsers objects.
+     * ConcurrentHashMap used to store the UWUsers.
+     * String keys: the users' nicknames.
+     * WQUser valuse: the corresponding WQUser objects.
      */
-    private ConcurrentHashMap<String, WQUser> userDB;
+    private ConcurrentHashMap<String, WQUser> WQDB;
 
     /**
-     * Returns a new WQDatabase.
+     * WQDatabase constructor.
      */
     public WQDatabase() {
-        final File tmpDir = new File("Database.json");
-        final boolean exists = tmpDir.exists();
+        // opens the path to the db file,
+        // if the db already exists calls this.deserialize()
+        final File tmp = new File("Database.json");
+        final boolean exists = tmp.exists();
         if (!exists) {
-            this.userDB = new ConcurrentHashMap<String, WQUser>();
+            this.WQDB = new ConcurrentHashMap<String, WQUser>();
         } else {
             this.deserialize();
         }
     }
 
     /**
-     * Sets the user's {@code nickname} score.
+     * Sets the user's score to the new value.
      * 
-     * @param nickname the user's nickname.
-     * @param score    the user's score.
+     * @param nick the user's nickname.
+     * @param scoreVariation    the user's score variation.
      */
-    public synchronized void setScore(String nickname, int score) {
-        WQUser user = this.userDB.get(nickname);
-        user.updateScore(score);
+    public synchronized void setScore(String nick, int scoreVariation) {
+        WQUser user = this.WQDB.get(nick);
+        user.updateScore(scoreVariation);
         try {
-            // The database has been modified, must serialize.
+            // Serializes the DB after the score update
             this.serialize();
         } catch (IOException e) {
             e.printStackTrace();
@@ -58,18 +58,18 @@ public class WQDatabase {
     //
 
     /**
-     * Inserts the user in the concurrent hash map if absent and returns true else
+     * Inserts the user in the concurrent hash map if absent and returns true.
      * it returns false if the nickname is already registered. Also serializes the
      * database.
      * 
-     * @param nickname the user's nickname.
+     * @param nick the user's nickname.
      * @param password the user's password.
      * @return {@code true} if the user has been added {@code false} otherwise.
      */
-    public boolean insertUser(final String nickname, final String password) {
+    public boolean insertUser(final String nick, final String password) {
         final int hash = password.hashCode();
-        final WQUser usr = new WQUser(nickname, hash);
-        if (userDB.putIfAbsent(nickname, usr) == null) {
+        final WQUser usr = new WQUser(nick, hash);
+        if (WQDB.putIfAbsent(nick, usr) == null) {
             try {
                 this.serialize();
             } catch (final IOException ioe) {
@@ -82,23 +82,23 @@ public class WQDatabase {
     }
 
     /**
-     * Adds the user {@code friendNickname} to the user {@code nickname} friends
-     * list.
+     * Adds a friend to the user's friendlist.
      * 
-     * @param nickname       the user that is adding the friend.
-     * @param friendNickname the friend to be added.
+     * @param nick       user's nickname.
+     * @param friendNick friend's nickname.
      * @return {@code true} if the friend has been added {@code false} otherwise.
      */
-    protected boolean addFriend(final String nickname, final String friendNickname) {
-        WQUser user = this.retrieveUser(nickname);
+    protected boolean addFriend(final String nick, final String friendNick) {
+        WQUser user = this.retrieveUser(nick);
         ArrayList<String> uFriends = user.getFriends();
-        if (uFriends.contains(friendNickname))
+        if (uFriends.contains(friendNick))
             return false;
         else {
-            uFriends.add(friendNickname);
-            ArrayList<String> fFriends = this.retrieveUser(friendNickname).getFriends();
-            fFriends.add(nickname);
+            uFriends.add(friendNick);
+            ArrayList<String> fFriends = this.retrieveUser(friendNick).getFriends();
+            fFriends.add(nick);
             try {
+                // serializes after the db update
                 this.serialize();
             } catch (IOException IOE) {
                 IOE.printStackTrace();
@@ -108,27 +108,27 @@ public class WQDatabase {
     }
 
     /**
-     * Retrieves the user {@code nickname}.
+     * Retrieves the user from the db and returns it to the caller.
      * 
-     * @param nickname the user nickname.
+     * @param nickname user's nickname.
      * @return the {@code WQUser} named {@code nickname}.
      */
     protected WQUser retrieveUser(final String nickname) {
-        final WQUser retUser = userDB.get(nickname);
-        return retUser;
+        final WQUser user = WQDB.get(nickname);
+        return user;
     }
 
     /**
-     * The {@code WQDatabase} serialization method. Upon invocation writes on disk
-     * {@code userDB}. The corresponding .json file is {@code Database.json}
+     * Serialization method. 
+     * Serializes {@code WQDB} on a .json file called {@code Database.json}
      * 
-     * @return a string containing userDB.
-     * @throws IOException if something fishy happens while opening and writing the
+     * @return a string containing WQDB for debug purposes only.
+     * @throws IOException if something strange happens with FileWriter while opening and writing the
      *                     file.
      */
     protected synchronized String serialize() throws IOException {
         final Gson gson = new Gson();
-        final String json = gson.toJson(userDB);
+        final String json = gson.toJson(WQDB);
         final FileWriter writer = new FileWriter("./Database.json");
         writer.write(json);
         writer.close();
@@ -136,12 +136,14 @@ public class WQDatabase {
     }
 
     /**
-     * The deserialization method, called on {@code WQServer} start.
+     * Deserialization method.
+     * called on {@code WQServer}'s startup.
      */
     protected void deserialize() {
 
-        final Gson gson = new Gson();
         String json = null;
+        final Gson gson = new Gson();
+        //creates a TypeToken for the ConcurrentHashMap. Required by GSON for a correct deserialization. 
         final Type type = new TypeToken<ConcurrentHashMap<String, WQUser>>() {
         }.getType();
         try {
@@ -149,8 +151,8 @@ public class WQDatabase {
         } catch (final IOException e) {
             e.printStackTrace();
         }
-        final ConcurrentHashMap<String, WQUser> deserializedMap = gson.fromJson(json, type);
-        this.userDB = deserializedMap;
+        final ConcurrentHashMap<String, WQUser> deserialized = gson.fromJson(json, type);
+        this.WQDB = deserialized;
     }
 
 }
