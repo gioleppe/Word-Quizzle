@@ -68,7 +68,7 @@ public class WQDatabase {
      * @param password the user's password.
      * @return {@code true} if the user has been added {@code false} otherwise.
      */
-    public boolean insertUser(final String nick, final String password) {
+    public synchronized boolean insertUser(final String nick, final String password) {
         final int hash = password.hashCode();
         final WQUser usr = new WQUser(nick, hash);
         if (WQDB.putIfAbsent(nick, usr) == null) {

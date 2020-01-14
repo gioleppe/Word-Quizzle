@@ -22,52 +22,51 @@ public class WQClient {
     /* ---------------- Fields -------------- */
 
     /**
-     * The hostname of the computer on which the server is being run.
+     * Hostname of the computer on which the server is being run.
      */
     private String serverHostname;
 
     /**
-     * The TCP socket used for server communication.
+     * TCP socket used for server communication.
      */
     private Socket clientSock;
 
     /**
-     * The UDP socket used for accepting match invitations.
+     * UDP socket used for accepting match invitations.
      */
     private DatagramSocket UDPSock;
 
     /**
      * The UDPListener class instance. The class implements the runnable interface,
-     * it listens for match invitations.
+     * since it must be run on a dedicated thread. It listens for match invitations.
      */
     private MatchListener UDPlistener;
 
     /**
-     * The thread on which UDPListener's run method is bein executed.
+     * The thread running the UDPListener.
      */
     private Thread UDPThread;
 
     /**
-     * The user's nickname associated with this WQClient instance.
+     * User's nickname associated with this WQClient instance.
      */
     private String myName;
 
     /**
-     * The console used for keyboard input parsing.
+     * Console class used for reading keyboard input.
      */
     private Console cons;
 
     /**
-     * Where the pending challenges are stored.
+     * Hashmap storing the pending matches.
      */
     private ConcurrentHashMap<String, DatagramPacket> challengers;
 
     /**
-     * This is the constructor for the WQClient class.
+     * Constructor for the WQClient class.
      * 
-     * @throws SocketException might be raised if the datagram socket if the socket
-     *                         could not be opened, or the socket could not bind to
-     *                         the specified local port.
+     * @throws SocketException might be raised if the datagram socket if the socket could
+     *  not be opened, or the socket could not bind to the specified local port.
      */
     public WQClient() throws SocketException {
         this.clientSock = new Socket();
@@ -80,10 +79,10 @@ public class WQClient {
     }
 
     /**
-     * Handles the RMI to register the user to the database.
+     * Calls the remote method to register the user to the database.
      * 
-     * @param nick the nickname of the user to be registered.
-     * @param pwd  the password of the user.
+     * @param nick nickname of the user to be registered.
+     * @param pwd  password of the user.
      * @throws RemoteException might be raised if there's some problem with the
      *                         remote object
      */
@@ -91,8 +90,8 @@ public class WQClient {
 
         WQRegistrationRMI serverObj = null;
         Remote remoteObject = null;
-        // opening the registry and locating the remote object from it
-        final Registry r = LocateRegistry.getRegistry(5678);
+        // gets the registry and locates the remote object
+        final Registry r = LocateRegistry.getRegistry(this.serverHostname, 5678);
         try {
             remoteObject = r.lookup("REGISTRATION");
             serverObj = (WQRegistrationRMI) remoteObject;
@@ -105,9 +104,9 @@ public class WQClient {
     }
 
     /**
-     * Handles the login of an already registered user.
+     * logs an already registed user.
      * 
-     * @param nick the nickname you want to login with
+     * @param nick your login nickname
      * @param pwd  your password
      * @throws IOException might be raised if an error occurs during the socket
      *                     connection.
@@ -131,24 +130,23 @@ public class WQClient {
                 "0 " + nick + " " + pwd + " " + UDPSock.getLocalPort());
         System.out.println(response);
         if (response.equals("Login error: wrong password.")) {
-            // closes the socket because the login failed
+            // login failed, must close the socket
             this.clientSock.close();
         }
 
         if (response.equals("Login successful.")) {
-            // assigns the name to this WQClient instance in order to recycle it for
-            // subsequent requests
+            // if the login is successful we can assign the name to this client instance
             this.myName = nick;
         }
     }
 
     /**
-     * Handles the logout of the user currently logged with this client.
+     * Logs out the user currently logged with this client.
      * 
      * @throws IOException if an I/O error occurs when closing the client socket.
      */
     private void logout() throws IOException {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
@@ -166,7 +164,7 @@ public class WQClient {
      * @param friend the nickname of the user you want to add as a friend
      */
     private void add_friend(final String friend) {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
@@ -176,10 +174,10 @@ public class WQClient {
     }
 
     /**
-     * Shows the user's friendlist.
+     * Shows the user's friendlist after getting it from the server.
      */
     private void friend_list() {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
@@ -189,10 +187,10 @@ public class WQClient {
     }
 
     /**
-     * Shows the user's score.
+     * Shows the user's score after getting it from the server.
      */
     private void score() {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
@@ -205,13 +203,13 @@ public class WQClient {
      * Shows the user's scoreboard.
      */
     private void scoreboard() {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
         }
-        // sends a scoreboard request to the server and prints the scoreboard for the
-        // user himself and his friends
+        // sends a scoreboard request to the server and prints the scoreboard 
+        // for the user  and his friends
         System.out.println(this.clientComunicate(this.clientSock, "5"));
     }
 
@@ -223,7 +221,7 @@ public class WQClient {
      *                     during connection
      */
     private void match(final String friend) throws IOException {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
@@ -253,7 +251,7 @@ public class WQClient {
      * Shows all the pending match requests.
      */
     private void showMatches() {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
@@ -275,13 +273,13 @@ public class WQClient {
      * Accepts a match sent by a friend.
      * 
      * @param friend the friend who sent you the request.
-     * @throws IOException          if something fishy happens during the
+     * @throws IOException          if something weird happens during the
      *                              {@code connect()}.
-     * @throws InterruptedException if something fishy happens during the
+     * @throws InterruptedException if something weird happens during the
      *                              {@code sleep()}.
      */
     private void acceptMatch(String friend) throws IOException, InterruptedException {
-        // check if the user is connected
+        // checks if the user is connected
         if (!this.clientSock.isConnected()) {
             System.out.println("You're not logged in");
             return;
