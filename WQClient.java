@@ -17,6 +17,13 @@ import java.net.DatagramPacket;
 import java.util.concurrent.ConcurrentHashMap;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * The WQClient implements the game's client logic.
+ * 
+ * <p>
+ * The class has methods to parse input and send the right requests to the server.
+ * It also has a dedicated thread used to wait for UDP challenge requests.
+ */
 public class WQClient {
 
     /* ---------------- Fields -------------- */

@@ -18,6 +18,13 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * MatchTask the match server side logic. It opens sockets in order to 
+ * let the two challengers match each other.
+ * 
+ * <p>
+ * The class has an inner selector in order to multiplex i/o from the freshly opened sockets.
+ */
 public class MatchTask implements Runnable {
 
     /* ---------------- Fields -------------- */
