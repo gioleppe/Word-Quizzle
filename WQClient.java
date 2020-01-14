@@ -458,14 +458,16 @@ public class WQClient {
         if (args[0].equals("--help")) {
             System.out
                     .println("Commands:" + "\n" + "registration <username> <password>: registers to the remote service"
-                            + "\n" + "login <username> <password>: logs in an user" + "\n" + "logout: logs out the user"
-                            + "\n" + "add_friend <nickFriend>: adds nickFriend as a friend" + "\n"
-                            + "friend_list: shows the friend lists" + "\n"
-                            + "match <nickFriend>: sends a match request to a friend" + "\n"
-                            + "show_matches: shows the pending match invitations" + "\n"
-                            + "accept_match: <nickFriend>: accepts nickFriend's match invitation" + "\n"
-                            + "score: shows the user's score" + "\n" + "scoreboard: shows the user's scoreboard" + "\n"
-                            + "quit: exits the WQWords client");
+                            + "\n" + "login: logs in an user. The client asks for username and password" 
+                            + "\n" + "logout: logs out the user"
+                            + "\n" + "add_friend <nickFriend>: adds nickFriend as a friend" 
+                            + "\n" + "friend_list: shows the friend lists"
+                            + "\n" + "match <nickFriend>: sends a match request to a friend" 
+                            + "\n" + "show_matches: shows the pending match invitations" 
+                            + "\n" + "accept_match: <nickFriend>: accepts nickFriend's match invitation" 
+                            + "\n" + "score: shows the user's score" 
+                            + "\n" + "scoreboard: shows the user's scoreboard" 
+                            + "\n" + "quit: exits the WQWords client");
             System.exit(0);
         }
 
