@@ -68,6 +68,7 @@ public class LoginTask implements Runnable {
      * 
      * @param datab   the database.
      * @param onlineu the list of online users.
+     * @param onlinei an hashmap representing logged IPs by nickname
      * @param sel     the selector.
      * @param selk    the selection key of interest.
      * @param nick    the user's nickname.

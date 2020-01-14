@@ -123,8 +123,8 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
      * Initializes the threadpool, the selector and the server's socket channel.
      * 
      * @param port       ServerSocketChannel port number.
-     * @param length     Match duration in minutes.
-     * @param invitation Match invitation timeout in seconds.
+     * @param matchMinutes     Match duration in minutes.
+     * @param invitationTO Match invitation timeout in seconds.
      * @param words      Number of words in a match.
      * 
      * @throws RemoteException could be be thrown since WQServer is a remote object.

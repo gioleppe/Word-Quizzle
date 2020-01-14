@@ -57,11 +57,11 @@ public class LogoutTask implements Runnable {
     /**
      * Returns a new LogoutTask.
      * 
-     * @param datab   the database.
-     * @param onlineu the list of online users.
-     * @param sel     the selector.
-     * @param selk    the selection key of interest.
-     * @param brutal  if {@code true} performs a brutal logout.
+     * @param ou hashmap representin online user's nicknames by used port.
+     * @param onlinei hashmap representing oline IPs by nickname 
+     * @param sl     the selector.
+     * @param sk    the selection key of interest.
+     * @param b  if {@code true} performs a brutal logout.
      */
     public LogoutTask(final ConcurrentHashMap<Integer, String> ou,
             final ConcurrentHashMap<String, InetSocketAddress> onlinei, final Selector sl, final SelectionKey sk,

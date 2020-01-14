@@ -78,7 +78,7 @@ public class MatchTask implements Runnable {
      * @param onlinei list of online users' UDP addresses.
      * @param sel     selector.
      * @param selk    selection key of interest.
-     * @param friends friend to challenge.
+     * @param frnd friend to challenge.
      * @param n       match legth.
      * @param m       invite duration.
      * @param l       number of words.
