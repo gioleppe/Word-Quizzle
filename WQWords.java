@@ -14,7 +14,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
- * The WQWrd class is used to extract random words from the dictionary
+ * The WQWords class is used to extract random words from the dictionary
  *  and to request translations to the MyMemory API. 
  */
 public class WQWords {

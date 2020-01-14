@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * let the two challengers match each other.
  * 
  * <p>
- * The class has an inner selector in order to multiplex i/o from the freshly opened sockets.
+ * The class has an inner selector in order to multiplex i/o from the sockets opened specifically for the match purposes.
  */
 public class MatchTask implements Runnable {
 

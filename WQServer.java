@@ -131,7 +131,7 @@ public class WQServer extends UnicastRemoteObject implements WQRegistrationRMI {
      */
     public WQServer(final int port, final int matchMinutes, final int invitationTO, final int words) throws RemoteException {
         this.database = new WQDatabase();
-        this.tPool = new ThreadPoolExecutor(4, 4, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        this.tPool = new ThreadPoolExecutor(4, Integer.MAX_VALUE, 100, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
         try {
             this.serverSelector = Selector.open();
             this.serverChannel = ServerSocketChannel.open();
