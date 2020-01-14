@@ -90,7 +90,7 @@ public class WQDatabase {
      * @param friendNick friend's nickname.
      * @return {@code true} if the friend has been added {@code false} otherwise.
      */
-    protected boolean addFriend(final String nick, final String friendNick) {
+    protected synchronized boolean addFriend(final String nick, final String friendNick) {
         WQUser user = this.retrieveUser(nick);
         ArrayList<String> uFriends = user.getFriends();
         if (uFriends.contains(friendNick))
