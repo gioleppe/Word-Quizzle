@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The class GetFriendListTask implements the retrieval of the friend list by
- * the user. Upon the execution of this task the WQServer will return a string
- * with the contents of the user's friens list which is represented by the field
+ * GetFriendListTask implements the retrieval of the friend list by
+ * the user. Upon execution of this task the WQServer will return a string
+ * with the contents of the user's friends list which is represented by the field
  * {@code friends} of the class WQUser.
  */
 public class GetFriendListTask implements Runnable {

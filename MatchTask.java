@@ -23,45 +23,45 @@ public class MatchTask implements Runnable {
     /* ---------------- Fields -------------- */
 
     /**
-     * The database of the WQServer.
+     * WQServer's database.
      */
     private final WQDatabase database;
 
     /**
-     * The onlineUsers of the WQServer.
+     * WQServer's online users.
      */
     private final ConcurrentHashMap<Integer, String> onlineusers;
 
     /**
-     * The onlineIPs of the WQServer.
+     * WQServer's online IPs.
      */
     private final ConcurrentHashMap<String, InetSocketAddress> onlineIps;
 
     /**
-     * The Selector of the code WQServer.
+     * WQServer's selector.
      */
     private final Selector selector;
 
     /**
-     * The SelectionKey with attached the Socket associated with the challenger's
+     * SelectionKey with attached the Socket associated with the challenger's
      * client.
      */
     private final SelectionKey key;
 
     /**
-     * The nickname of the the friend that the user wants to challenge.
+     * Nickname of the friend that the user wants to challenge.
      */
     private final String friend;
 
     /**
-     * The match duration in minutes. It's an int stating how many minutes a match
-     * shall last. It's specified by command line.
+     * Match duration in minutes. It's an int stating how many minutes a match
+     * shall last. 
      */
     private final int matchTimer;
 
     /**
-     * The match invitation time to live. It's an int stating how many seconds a
-     * match invitation shall remain valid. It's specified by command line.
+     * Match invitation's time to live. It's an int stating how many seconds a
+     * match invitation shall remain valid. 
      */
     private final int acceptTimer;
 
@@ -73,15 +73,15 @@ public class MatchTask implements Runnable {
     /**
      * Returns a new MatchTask.
      * 
-     * @param datab   the database.
-     * @param onlineu the list of online users.
-     * @param onlinei the list of online users UDP addresses.
-     * @param sel     the selector.
-     * @param selk    the selection key of interest.
-     * @param friends the friend to challenge.
-     * @param n       the match legth.
-     * @param m       the invite duration.
-     * @param l       the number of words.
+     * @param datab   database.
+     * @param onlineu list of online users.
+     * @param onlinei list of online users' UDP addresses.
+     * @param sel     selector.
+     * @param selk    selection key of interest.
+     * @param friends friend to challenge.
+     * @param n       match legth.
+     * @param m       invite duration.
+     * @param l       number of words.
      */
     public MatchTask(final WQDatabase datab, final ConcurrentHashMap<Integer, String> onlineu,
             final ConcurrentHashMap<String, InetSocketAddress> onlinei, final Selector sel, final SelectionKey selk,
@@ -104,12 +104,11 @@ public class MatchTask implements Runnable {
 
         String msg;
 
-        // Retrieve the user's nickname from the port number.
+        // retrieves the user's nickname from the port number
         final int clientPort = clientSocket.socket().getPort();
         final String nickname = onlineusers.get(clientPort);
 
-        // Then check if the user nickname is not equal to the
-        // friend's nickname.
+        // checks if the user nickname is equal to friend's nickname
         if (nickname.equals(friend)) {
             msg = "Match error: you cannot challenge yourself.\n";
             writeMsg(msg, bBuff, clientSocket);
@@ -117,7 +116,7 @@ public class MatchTask implements Runnable {
             selector.wakeup();
             return;
         } else {
-            // Check if the two users are friends.
+            // checks if the two users are friends.
             final WQUser challenger = database.retrieveUser(nickname);
             final ArrayList<String> challengerFriends = challenger.getFriends();
             if (!(challengerFriends.contains(friend))) {
@@ -135,8 +134,8 @@ public class MatchTask implements Runnable {
                     selector.wakeup();
                     return;
                 } else {
-                    // Start the invitation login.
-                    // Setting up the UDP socket.
+                    // start the invitation login.
+                    // sets up the UDP socket.
                     DatagramSocket invSocket = null;
                     try {
                         invSocket = new DatagramSocket();
@@ -144,7 +143,7 @@ public class MatchTask implements Runnable {
                     } catch (final SocketException e) {
                         e.printStackTrace();
                     }
-                    // Initializing challenge selector.
+                    // initializes challenge selector.
                     Selector matchSelector = null;
                     ServerSocketChannel matchChannel = null;
                     try {
@@ -158,21 +157,21 @@ public class MatchTask implements Runnable {
                     } catch (final IOException IOE) {
                         IOE.printStackTrace();
                     }
-                    // The invitation consists in the nickname of the challenger user and a
+                    // the invitation consists in the nickname of the challenger user and a
                     // portnumber.
                     final byte[] invitation = (nickname + "/" + matchChannel.socket().getLocalPort()).getBytes();
-                    // Getting the challenged user IP address in order to set the packet
+                    // gets the challenged user IP address in order to set the packet
                     // destination.
                     final InetSocketAddress friendAddress = onlineIps.get(friend);
-                    // Send invitation.
+                    // sends invitation.
                     sendDatagram(invSocket, invitation, friendAddress);
-                    // Receive invitation;
+                    // receives invitation;
                     String response = null;
                     try {
                         response = receiveDatagram(invSocket);
                     } catch (final SocketTimeoutException e) {
                         msg = "Match error: invitation to " + friend + " timed out.\n";
-                        // If the invitaiton times out, notifies the friend to delete the pending match
+                        // if the invitaiton times out, notifies the friend to delete the pending match
                         // invitation from nickname.
                         byte[] friendMsg = ("TIMEOUT/" + nickname).getBytes();
                         sendDatagram(invSocket, friendMsg, friendAddress);
@@ -183,9 +182,9 @@ public class MatchTask implements Runnable {
                     } catch (final IOException e) {
                         e.printStackTrace();
                     }
-                    // Analyzing the response, the eventual refusal of the friend must be
+                    // analyzes the response. An eventual refusal from the friend must be
                     // communicated to the challeging client.
-                    // If the friends refuses must notify the challenging user.
+                    // if the friend refuses the challenging user must be notified.
                     if (response.equals("N")) {
                         msg = friend + " refused your match invitation.\n";
                         writeMsg(msg, bBuff, clientSocket);
@@ -193,7 +192,7 @@ public class MatchTask implements Runnable {
                         selector.wakeup();
                         return;
                     } else if (response.equals("Y")) {
-                        // The friends accepted the challenge must create the challenge socket and
+                        // The friend accepted the challenge. Must create the challenge socket and
                         // prepare the words.
                         msg = friend + " accepted your match invitation./" + matchChannel.socket().getLocalPort()
                                 + "\n";
@@ -214,14 +213,14 @@ public class MatchTask implements Runnable {
                                     final Set<SelectionKey> keys = matchSelector.selectedKeys();
                                     final Iterator<SelectionKey> keysIterator = keys.iterator();
                                     while (keysIterator.hasNext()) {
-                                        // Extract one key
+                                        // extract one key
                                         final SelectionKey key = keysIterator.next();
-                                        // The key must be manually removed from the iterator, the selector doesn't
-                                        // Automatically remove the istances of the SelectionKeys.
+                                        // the key must be manually removed from the iterator since the selector
+                                        // doesn't automatically remove SelectionKeys.
                                         keysIterator.remove();
                                         if (key.isAcceptable()) {
                                             try {
-                                                // Accepting the connection from the client
+                                                // accepts the connection from the client
                                                 final ServerSocketChannel channel = (ServerSocketChannel) key.channel();
                                                 final SocketChannel client = channel.accept();
                                                 final InetAddress addr = client.socket().getInetAddress();
@@ -237,7 +236,7 @@ public class MatchTask implements Runnable {
                                                     resultsBuff2 = clientBuff;
                                                 }
                                                 client.configureBlocking(false);
-                                                // Registering the client socket for read operations
+                                                // registers the client socket for read operations
                                                 final SelectionKey clientKey = client.register(matchSelector,
                                                         SelectionKey.OP_READ);
                                                 clientKey.attach(clientBuff);
@@ -252,6 +251,7 @@ public class MatchTask implements Runnable {
                                 IOE.printStackTrace();
                             }
                         }
+                        // requests words from WQWords
                         HashMap<String, ArrayList<String>> dictionary = null;
                         try {
                             dictionary = new WQWords(matchWords).requestWords();
@@ -278,6 +278,7 @@ public class MatchTask implements Runnable {
                                         // The key must be manually removed from the iterator, the selector doesn't
                                         // Automatically remove the istances of the SelectionKeys.
                                         keysIterator.remove();
+                                        // here is the real match logic.
                                         if (key.isReadable()) {
                                             final SocketChannel clientChann = (SocketChannel) key.channel();
                                             final ByteBuffer clientBuff = (ByteBuffer) key.attachment();
@@ -328,6 +329,7 @@ public class MatchTask implements Runnable {
                             }
                             currentTime = System.currentTimeMillis();
                         }
+                        // prepares to assign scores
                         int score1 = 0;
                         int score2 = 0;
                         final int bonus = 3;
@@ -384,11 +386,11 @@ public class MatchTask implements Runnable {
     }
 
     /**
-     * Utility function to send a datagram in a blocking UDP socket.
+     * Utility function. sends a datagram in a UDP socket.
      * 
-     * @param socket the socket.
-     * @param msg    the message to insert in the datagram.
-     * @param addr   the {@code InetSocketAddress} address.
+     * @param socket socket.
+     * @param msg    message to insert in the datagram.
+     * @param addr   {@code InetSocketAddress} address.
      */
     private void sendDatagram(final DatagramSocket socket, final byte[] msg, final InetSocketAddress addr) {
         final DatagramPacket datagram = new DatagramPacket(msg, msg.length, addr);
@@ -400,10 +402,10 @@ public class MatchTask implements Runnable {
     }
 
     /**
-     * Utility function to receive and read a message from a blocking UDP socket.
+     * Utility function. Receives and reads a message from a blocking UDP socket.
      * 
      * @param socket the socket.
-     * @return the red message.
+     * @return the Datagram received on the socket.
      * @throws SocketTimeoutException if the socket times out.
      * @throws IOException            if something wrong happens during the call to
      *                                {@code receive}.
@@ -418,7 +420,7 @@ public class MatchTask implements Runnable {
     }
 
     /**
-     * Utility function to read a message from a NIO socket.
+     * Utility function. Reads a message from a NIO socket.
      * 
      * @param wqClient the socket.
      * @param bBuff    the socket associated byte buffer.
@@ -463,11 +465,11 @@ public class MatchTask implements Runnable {
     }
 
     /**
-     * Utility function to write a message in a NIO socket.
+     * Utility function. Writes a message in a NIO socket.
      * 
      * @param msg    the message to write
-     * @param bBuff  the socket associated byte buffer.
-     * @param socket the socket.
+     * @param bBuff  socket's associated byte buffer.
+     * @param socket socket.
      */
     private void writeMsg(final String msg, final ByteBuffer bBuff, final SocketChannel socket) {
         bBuff.put(msg.getBytes());

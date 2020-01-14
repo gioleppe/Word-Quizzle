@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The class GetScoreboardTask implements the retrieval of the scoreboard by an
- * user. For each user the scoreboard consists in the names and scores of the
- * user's friends sorted by scores in descending order. Upon the execution of
+ * GetScoreboardTask implements an user's scoreboard retrieval. 
+ * For each user the scoreboard consists in the names and scores of the
+ * user's friends sorted by scores in descending order. Upon execution of
  * this task the WQServer will return the user's scoreboard in the form of a
  * string containing all of the user's friends nicknames, each associated with
  * the corresponding friend's score, and the user's nickname and score.

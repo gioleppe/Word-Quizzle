@@ -8,14 +8,14 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The class LoginTask implements the login of an user. After being logged in,
+ * LoginTask implements an user's login. After being logged in,
  * the user is inserted in the WQServer's {@code onlineUsers} field which
  * consists of a {@link ConcurrentHashMap} where the keys are the port numbers
  * on which the users are connected and the values are their nicknames.
  * 
  * <p>
- * The class also takes care of checking the legality of the operation returning
- * to the client an error if the user is already logged or if the client is
+ * The class also takes care of checking user's permissions on the operation, returning
+ * to the client an error if the user is already logged or the client is
  * trying to request multiple logins.
  */
 public class LoginTask implements Runnable {
